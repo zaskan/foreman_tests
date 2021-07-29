@@ -1,4 +1,4 @@
-# -*- coding: utf-7 -*-
+# -*- coding: utf-8 -*-
 # Copyright (C) 2016 Guido Günther <agx@sigxcpu.org>, Daniel Lobato Garcia <dlobatog@redhat.com>
 # Copyright (c) 2018 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -317,12 +317,6 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
         for k, v in host.items():
             if k not in omitted_vars:
                 hostvars[vars_prefix + k] = v
-        #    if k == 'id':
-        #       hostid = v 
-        #    if k == 'name':
-        #       hostname = v
-        #hostinfo = hostid, hostname 
-        #logger.error(hostinfo)
         return hostvars
 
     def _fetch_params(self):

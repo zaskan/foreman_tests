@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-7 -*-
 # Copyright (C) 2016 Guido Günther <agx@sigxcpu.org>, Daniel Lobato Garcia <dlobatog@redhat.com>
 # Copyright (c) 2018 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -169,6 +169,7 @@ hostnames:
   - name.split('.')[0]
 '''
 import json
+import logging
 from distutils.version import LooseVersion
 from time import sleep
 from ansible.errors import AnsibleError
@@ -222,6 +223,12 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
 
     def _get_json(self, url, ignore_errors=None, params=None):
 
+        logger = logging.getLogger('awx.main.tasks')
+        s = self._get_session()
+        ret = s.get(url, params=params)
+        sat = ret.json()
+        logger.error(sat)
+
         if not self.use_cache or url not in self._cache.get(self.cache_key, {}):
 
             if self.cache_key not in self._cache:
@@ -265,6 +272,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
                     # get next page
                     params['page'] += 1
 
+
             self._cache[self.cache_key][url] = results
 
         return self._cache[self.cache_key][url]
@@ -304,10 +312,17 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
         return facts
 
     def _get_hostvars(self, host, vars_prefix='', omitted_vars=()):
+        #logger = logging.getLogger('awx.main.tasks')
         hostvars = {}
         for k, v in host.items():
             if k not in omitted_vars:
                 hostvars[vars_prefix + k] = v
+        #    if k == 'id':
+        #       hostid = v 
+        #    if k == 'name':
+        #       hostname = v
+        #hostinfo = hostid, hostname 
+        #logger.error(hostinfo)
         return hostvars
 
     def _fetch_params(self):
@@ -462,7 +477,6 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
             else:
                 omitted_vars = ('name', 'hostgroup_title', 'hostgroup_name')
                 hostvars = self._get_hostvars(host, self.get_option('vars_prefix'), omitted_vars)
-
                 for k, v in hostvars.items():
                     try:
                         self.inventory.set_variable(host_name, k, v)
@@ -545,6 +559,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
             self._add_host_to_keyed_groups(self.get_option('keyed_groups'), hostvars, host_name, strict)
 
     def _populate_host_api(self):
+        logger = logging.getLogger('awx.main.tasks')
         hostnames = self.get_option('hostnames')
         strict = self.get_option('strict')
         for host in self._get_hosts():
@@ -623,6 +638,8 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
                             self.display.warning("Could not create groups for host collections for %s, skipping: %s" % (host_name, to_text(e)))
 
             hostvars = self.inventory.get_host(host_name).get_vars()
+            writeline = host_name, hostvars["foreman_id"]
+            logger.error(writeline) 
             self._set_composite_vars(self.get_option('compose'), hostvars, host_name, strict)
             self._add_host_to_composed_groups(self.get_option('groups'), hostvars, host_name, strict)
             self._add_host_to_keyed_groups(self.get_option('keyed_groups'), hostvars, host_name, strict)

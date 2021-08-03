@@ -187,6 +187,7 @@ except ImportError:
 
 from requests.auth import HTTPBasicAuth
 
+logging.basicConfig()
 
 class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
     ''' Host inventory parser for ansible using foreman as source. '''
@@ -222,12 +223,10 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
         return self.session
 
     def _get_json(self, url, ignore_errors=None, params=None):
-
         logger = logging.getLogger('awx.main.tasks')
         s = self._get_session()
         ret = s.get(url, params=params)
         sat = ret.json()
-        logger.error(sat)
 
         if not self.use_cache or url not in self._cache.get(self.cache_key, {}):
 
@@ -639,7 +638,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
             self._add_host_to_keyed_groups(self.get_option('keyed_groups'), hostvars, host_name, strict)
 
     def parse(self, inventory, loader, path, cache=True):
-
+        logger = logging.getLogger('awx.main.tasks')
         super(InventoryModule, self).parse(inventory, loader, path)
 
         # read config from file, this sets 'options'
@@ -649,6 +648,8 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
         self.foreman_url = self.get_option('url')
         self.cache_key = self.get_cache_key(path)
         self.use_cache = cache and self.get_option('cache')
+        full = self._get_hosts()
+        logger.error(full)
 
         # actually populate inventory
         self._populate()
